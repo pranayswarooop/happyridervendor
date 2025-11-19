@@ -42,7 +42,7 @@
             /* Space for fixed header */
         }
 
-        /* --- NAVIGATION BAR (Copied from index.html) --- */
+        /* --- NAVIGATION BAR (Copied from main.html) --- */
         .header-bar {
             position: fixed;
             top: 0;
@@ -371,7 +371,7 @@
                 <div class="user" id="menu-username">N/A</div>
                 <div class="muted">Profile Menu</div>
 
-                <button class="menu-btn" onclick="gotoPage('index.html')">Dashboard</button>
+                <button class="menu-btn" onclick="gotoPage('main.html')">Dashboard</button>
                 <button class="menu-btn" onclick="gotoPage('profile.html')">Profile</button>
                 <button class="menu-btn" onclick="gotoPage('wallet.html')">Wallet</button>
                 <button class="menu-btn" onclick="gotoPage('history.html')">History</button>
@@ -451,7 +451,7 @@
                 <p style="font-size:0.9rem; color:#f97316; font-weight:600;">
                     To edit the data, please contact us using the WhatsApp icon below or visit Customer Support.
                 </p>
-                <button class="btn btn-secondary" onclick="gotoPage('index.html')">Back to Dashboard</button>
+                <button class="btn btn-secondary" onclick="gotoPage('main.html')">Back to Dashboard</button>
             </div>
         </div>
     </main>
@@ -555,7 +555,7 @@
             } catch (error) {
                 console.error("Error loading profile:", error);
                 alert("Failed to load profile data. Redirecting to Dashboard.");
-                window.location.href = "index.html";
+                window.location.href = "main.html";
             } finally {
                 document.getElementById('loader-overlay').style.display = 'none';
             }
@@ -566,7 +566,7 @@
             if (user) {
                 loadProfileData(user);
             } else {
-                window.location.href = "login.html";
+                window.location.href = "index.html";
             }
         });
 
@@ -592,8 +592,8 @@
 
         // Navigation helpers
         window.gotoPage = function (name) {
-            // Check if the current page is profile.html and we're trying to navigate to index.html
-            if (name === 'index.html') {
+            // Check if the current page is profile.html and we're trying to navigate to main.html
+            if (name === 'main.html') {
                 window.location.href = name;
             } else if (name === 'profile.html') {
                 // Already on the profile page, just close the menu
@@ -607,12 +607,13 @@
 
         window.logout = function () {
             signOut(auth).then(() => {
-                window.location.href = 'login.html'; // Redirect to your sign-in page
+                window.location.href = 'index.html'; // Redirect to your sign-in page
             }).catch((error) => {
                 alert("Logout Error: " + error.message);
             });
         }
     </script>
 </body>
+
 
 </html>
