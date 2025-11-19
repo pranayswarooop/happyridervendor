@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Happy Riders - Partner Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        :root {
+            --bg: #fff7da;
+            --card: #fff;
+            --gold: #facc15;
+            --orange: #f97316;
+            --muted: #666;
+            --shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+            --radius: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            width: 100%;
+            background-color: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            padding-top: 100px;
+            color: #222;
+        }
+
+        /* --- LOADER --- */
+        #loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .spinner {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: 6px solid #fde68a;
+            border-top-color: var(--orange);
+            animation: spin 1s linear infinite;
+        }
+
+        /* --- FORM SUBMISSION LOADER (NEW) --- */
+        #form-loader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            flex-direction: column;
+        }
+
+        #form-loader .spinner {
+            width: 40px;
+            height: 40px;
+            border-width: 4px;
+        }
+
+        #form-loader p {
+            margin-top: 10px;
+            font-weight: 600;
+            color: var(--orange);
+        }
+
+        #loader-overlay p {
+            margin-top: 15px;
+            font-weight: 500;
+            color: var(--muted);
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* --- HEADER & PROFILE --- */
+        .header-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            z-index: 1000;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: #333;
+        }
+
+        .profile-container {
+            position: relative;
+            z-index: 200;
+        }
+
+        .profile-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .dropdown {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            width: 230px;
+            display: none;
+            flex-direction: column;
+            padding: 14px;
+        }
+
+        .dropdown.show {
+            display: flex;
+        }
+
+        .user-box {
+            text-align: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .user-box strong {
+            font-size: 1.1rem;
+            color: #333;
+        }
+
+        .menu-btn {
+            width: 100%;
+            background-color: #fff9d6;
+            border: none;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.95rem;
+            border-radius: 8px;
+            text-align: left;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .menu-btn:hover {
+            background-color: #ffeaa7;
+            transform: translateX(3px);
+        }
+
+        .logout-btn {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 12px;
+            font-size: 0.95rem;
+            transition: 0.3s;
+        }
+
+        .logout-btn:hover {
+            background-color: #dc2626;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 750px;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: none;
+            margin-bottom: 40px;
+            position: relative;
+            /* Added for form loader positioning */
+        }
+
+        #dashboard-container {
+            max-width: 1100px;
+            background: transparent;
+            box-shadow: none;
+            padding: 0;
+        }
+
+        .section {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 15px;
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #444;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .small-note {
+            font-size: 0.8rem;
+            color: #777;
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            background: #fcfcfc;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--gold);
+            background: #fff;
+        }
+
+        textarea {
+            resize: vertical;
+            height: 80px;
+        }
+
+        .pin-container {
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+            max-width: 300px;
+        }
+
+        .pin-box {
+            width: 45px;
+            height: 45px;
+            text-align: center;
+            font-size: 1.2rem;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            outline: none;
+            background: #fff;
+            transition: 0.3s;
+            padding: 0;
+        }
+
+        .pin-box:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 5px rgba(250, 204, 21, 0.5);
+            transform: scale(1.05);
+        }
+
+        .radio-block {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .radio-inline {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            color: #555;
+            background: #f9f9f9;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #eee;
+        }
+
+        .radio-inline:hover {
+            background: #fffbe6;
+            border-color: var(--gold);
+        }
+
+        .radio-inline input {
+            transform: scale(1.2);
+            accent-color: var(--gold);
+            cursor: pointer;
+        }
+
+        .loc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .icon-group {
+            display: flex;
+            gap: 5px;
+        }
+
+        .icon-btn {
+            padding: 12px 15px;
+            background: var(--gold);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #333;
+            transition: 0.3s;
+        }
+
+        .icon-btn:hover {
+            background: #eab308;
+            transform: scale(1.05);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--gold);
+            color: #333;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #eab308;
+        }
+
+        .status-header {
+            text-align: center;
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            margin-bottom: 20px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .status-verified {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .review-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            font-size: 0.95rem;
+        }
+
+        .review-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .review-item label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 2px;
+        }
+
+        .review-item span {
+            font-weight: 600;
+            color: #333;
+            word-break: break-word;
+        }
+
+        .full-width {
+            grid-column: span 2;
+        }
+
+        .sub-header {
+            grid-column: span 2;
+            margin-top: 10px;
+            border-bottom: 1px dashed #ddd;
+            padding-bottom: 5px;
+            color: #eab308;
+            font-weight: bold;
+        }
+
+        .whatsapp-float {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: #25d366;
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+
+        .whatsapp-float:hover {
+            transform: scale(1.1);
+            background-color: #128C7E;
+        }
+
+        .status-cards {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 18px;
+        }
+
+        .card {
+            width: 170px;
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 14px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: transform .18s, box-shadow .18s;
+            border: 2px solid transparent;
+        }
+
+        .card.active {
+            border-color: var(--orange);
+            box-shadow: 0 0 15px rgba(249, 115, 22, 0.4);
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .card .title {
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .card .count {
+            margin-top: 8px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .table-wrap {
+            margin-top: 22px;
+            background: var(--card);
+            border-radius: 10px;
+            padding: 12px;
+            box-shadow: var(--shadow);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        th,
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+            vertical-align: middle;
+            font-size: 14px;
+        }
+
+        th {
+            background: #fff8e6;
+            color: #333;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        td.center {
+            text-align: center;
+        }
+
+        .btn-table {
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .btn-prepare {
+            background: #34d399;
+            color: #04251a;
+        }
+
+        .btn-ready {
+            background: #facc15;
+            color: #333;
+        }
+
+        .btn-return {
+            background: #f87171;
+            color: white;
+        }
+
+        .items-list {
+            font-size: 13px;
+            color: #111;
+            line-height: 1.35;
+            text-align: left;
+        }
+
+        .empty {
+            padding: 24px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .tag {
+            font-size: 12px;
+            padding: 6px 8px;
+            border-radius: 999px;
+            background: #fff3c4;
+            color: #663c00;
+            display: inline-block;
+        }
+
+        #map-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #map-content {
+            width: 90%;
+            height: 85%;
+            max-width: 600px;
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        #map {
+            flex-grow: 1;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        @media (max-width: 600px) {
+
+            .grid-2,
+            .loc-grid,
+            .review-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .full-width {
+                grid-column: span 1;
+            }
+
+            .header-bar {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="loader-overlay">
+        <div class="spinner"></div>
+        <p>Loading Account Info...</p>
+    </div>
+
+    <div class="header-bar">
+        <h1 id="welcome-title">Happy Riders</h1>
+        <div class="profile-container">
+            <div class="profile-icon" id="profileIcon">👤</div>
+            <div class="dropdown" id="dropdownMenu">
+                <div class="user-box">
+                    <strong id="profile-username">Username</strong>
+                </div>
+                <div id="full-menu-options" class="hidden">
+                    <button class="menu-btn" onclick="showDashboardView()">Dashboard</button>
+                    <button class="menu-btn" onclick="window.location.href='profile.html'">Profile</button>
+                    <button class="menu-btn" onclick="alert('Coming Soon!')">Wallet</button>
+                    <button class="menu-btn" onclick="alert('Coming Soon!')">History</button>
+                    <button class="menu-btn" onclick="alert('Coming Soon!')">Manage Branches</button>
+                    <button class="menu-btn" onclick="alert('Coming Soon!')">Manage Branch Admins</button>
+                    <button class="menu-btn" onclick="window.location.href='menu.html'">Menu</button>
+                    <button class="menu-btn" onclick="alert('Coming Soon!')">Policies</button>
+                    <button class="menu-btn" onclick="alert('Coming Soon!')">Manage Discounts</button>
+                    <button class="menu-btn" onclick="alert('Coming Soon!')">Customer Support</button>
+                </div>
+                <button class="logout-btn" id="logoutBtn">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container" id="registration-form">
+        <div id="form-loader">
+            <div class="spinner"></div>
+            <p>Submitting Application...</p>
+        </div>
+        <h2 style="text-align:center; margin-bottom:25px; color:#333;">Partner Registration</h2>
+        <form id="partnerForm">
+            <div class="section"><label for="ownerName">Owner Name *</label><input id="ownerName" type="text"
+                    placeholder="Owner full name" required></div>
+
+            <div class="section">
+                <label>Business Type *</label>
+                <div class="radio-block">
+                    <label class="radio-inline"><input type="radio" name="bt_main" value="home_maker"
+                            required><span>Home Maker</span></label>
+                    <label class="radio-inline"><input type="radio" name="bt_main" value="cloud_kitchen"><span>Cloud
+                            Kitchen</span></label>
+                    <label class="radio-inline"><input type="radio" name="bt_main" value="multi_cuisine"><span>Multi
+                            Cuisine Restaurant</span></label>
+                    <label class="radio-inline"><input type="radio" name="bt_main"
+                            value="daba"><span>Daba</span></label>
+                    <label class="radio-inline"><input type="radio" name="bt_main"
+                            value="cafe"><span>Cafe</span></label>
+                    <label class="radio-inline"><input type="radio" name="bt_main"
+                            value="bakery"><span>Bakery</span></label>
+                    <label class="radio-inline"><input type="radio" name="bt_main" value="street_stall"><span>Street
+                            Food Stall</span></label>
+                    <label class="radio-inline"><input type="radio" name="bt_main" value="food_truck"><span>Food
+                            Truck</span></label>
+                    <label class="radio-inline"><input type="radio" name="bt_main"
+                            value="others"><span>Others</span></label>
+                </div>
+                <input id="businessTypeOther" type="text" class="hidden" placeholder="Specify other business type"
+                    style="margin-top:10px;">
+            </div>
+
+            <div class="section"><label id="nameLabel">Restaurant Name (As per FSSAI) *</label><input
+                    id="restaurantName" type="text" required></div>
+
+            <div class="grid-2 section">
+                <div><label>FSSAI Type *</label><select id="fssaiType" required>
+                        <option value="">Select Type</option>
+                        <option value="local">Local</option>
+                        <option value="state">State</option>
+                        <option value="central">Central</option>
+                    </select></div>
+                <div><label>FSSAI Number (14 Digits) *</label><input id="fssaiNumber" type="tel" maxlength="14"
+                        placeholder="14-digit number" required></div>
+            </div>
+
+            <div class="section"><label>GST Registered *</label>
+                <div class="radio-block" style="flex-direction:row; gap:20px;">
+                    <label class="radio-inline"><input type="radio" name="gstReg" value="yes"
+                            required><span>Yes</span></label>
+                    <label class="radio-inline"><input type="radio" name="gstReg" value="no"
+                            checked><span>No</span></label>
+                </div><input id="gstNumber" type="text" class="hidden" placeholder="Enter GST Number"
+                    style="margin-top:10px;">
+            </div>
+
+            <div class="section"><label id="addressLabel">Branch Address *</label><textarea id="address"
+                    required></textarea></div>
+
+            <div class="grid-2 section">
+                <div><label>City *</label><input id="city" type="text" required></div>
+                <div><label>State *</label><input id="state" type="text" required></div>
+            </div>
+
+            <div class="section">
+                <label>Pincode *</label>
+                <div class="pin-container">
+                    <input type="tel" class="pin-box" maxlength="1" pattern="[0-9]"><input type="tel" class="pin-box"
+                        maxlength="1" pattern="[0-9]"><input type="tel" class="pin-box" maxlength="1" pattern="[0-9]">
+                    <input type="tel" class="pin-box" maxlength="1" pattern="[0-9]"><input type="tel" class="pin-box"
+                        maxlength="1" pattern="[0-9]"><input type="tel" class="pin-box" maxlength="1" pattern="[0-9]">
+                </div>
+            </div>
+
+            <div class="section"><label>Location (Coordinates) *</label>
+                <div class="loc-grid">
+                    <input type="text" id="loc-x" placeholder="Latitude" readonly required>
+                    <input type="text" id="loc-y" placeholder="Longitude" readonly required>
+                    <div class="icon-group">
+                        <button type="button" class="icon-btn" onclick="getGPS()"><i
+                                class="fa-solid fa-location-crosshairs"></i></button>
+                        <button type="button" class="icon-btn" onclick="openMap()"><i
+                                class="fa-solid fa-map-location-dot"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-2 section">
+                <div><label>Owner Phone *</label><input id="ownerPhone" type="tel" maxlength="10" required></div>
+                <div><label>Manager Phone *</label><input id="managerPhone" type="tel" maxlength="10" required></div>
+            </div>
+            <button type="submit" id="submitBtn" class="btn">Submit Application</button>
+        </form>
+    </div>
+
+    <div class="main-container" id="status-screen">
+        <div class="status-header">
+            <div id="status-badge-el" class="status-badge status-pending"><i class="fa-solid fa-clock"></i> Under
+                Process</div>
+            <h3 id="status-title" style="margin-top:10px;">Application Submitted</h3>
+            <p style="color:#666; font-size:0.9rem; margin-top:10px;">Your application is currently under review.</p>
+        </div>
+        <h4 style="margin-bottom:15px; color:#333; border-left:4px solid #facc15; padding-left:10px;">Submitted Details
+        </h4>
+        <div id="data-summary"></div>
+    </div>
+
+    <div class="main-container" id="dashboard-container">
+        <div class="status-cards">
+            <div class="card" id="card-inProgress" onclick="showTable('inProgress')">
+                <div class="title">New Orders</div>
+                <div class="count" id="count-inProgress">0</div>
+            </div>
+            <div class="card" id="card-prepCompleted" onclick="showTable('prepCompleted')">
+                <div class="title">Ready for Pickup</div>
+                <div class="count" id="count-prepCompleted">0</div>
+            </div>
+            <div class="card" id="card-outForDelivery" onclick="showTable('outForDelivery')">
+                <div class="title">Out for Delivery</div>
+                <div class="count" id="count-outForDelivery">0</div>
+            </div>
+            <div class="card" id="card-delivered" onclick="showTable('delivered')">
+                <div class="title">Delivered</div>
+                <div class="count" id="count-delivered">0</div>
+            </div>
+            <div class="card" id="card-returnOrders" onclick="showTable('returnOrders')">
+                <div class="title">Return Requested</div>
+                <div class="count" id="count-returnOrders">0</div>
+            </div>
+            <div class="card" id="card-returnAccepted" onclick="showTable('returnAccepted')">
+                <div class="title">Return Accepted</div>
+                <div class="count" id="count-returnAccepted">0</div>
+            </div>
+        </div>
+        <div id="tableContainer" class="table-wrap"></div>
+    </div>
+
+    <a href="#" class="whatsapp-float" id="whatsapp-link" target="_blank" style="display:none;">
+        <i class="fa-brands fa-whatsapp"></i>
+    </a>
+
+    <div id="map-modal">
+        <div id="map-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3>Pick Location</h3><button onclick="closeMap()"
+                    style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            <div id="map"></div><button class="btn" onclick="confirmMapLocation()" style="margin-top:0;">Confirm
+                Location</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        // IMPORT arrayUnion HERE
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // IMPORTANT: The Auth flow now relies on the email prefix as the username.
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1fdsIDsOmds8sT9thk_eTPBCW5UC02BM",
+            authDomain: "happy-rider-restaurant.firebaseapp.com",
+            projectId: "happy-rider-restaurant",
+            storageBucket: "happy-rider-restaurant.firebasestorage.app",
+            messagingSenderId: "976202866016",
+            appId: "1:976202866016:web:80b4737c422bfe70e09205",
+            measurementId: "G-ST3M0BVBKQ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        let currentUsername = null;
+
+        // Helper to generate the Firestore "username" from the email prefix
+        function generateUsernameFromEmail(email) {
+            return email.split('@')[0].toLowerCase();
+        }
+
+        // --- PINCODE BOX LOGIC ---
+        function setupInputBoxes(containerSelector) {
+            const boxes = document.querySelectorAll(containerSelector);
+            boxes.forEach((box, index) => {
+                box.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                    if (e.target.value.length === 1 && index < boxes.length - 1) boxes[index + 1].focus();
+                });
+                box.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && !e.target.value && index > 0) boxes[index - 1].focus();
+                });
+            });
+        }
+        setupInputBoxes('.pin-box');
+        const getPincode = () => Array.from(document.querySelectorAll('.pin-box')).map(b => b.value).join('');
+        const getFssaiNumber = () => document.getElementById('fssaiNumber').value;
+
+        // --- AUTH & PAGE ROUTER ---
+        onAuthStateChanged(auth, async (user) => {
+            const loader = document.getElementById('loader-overlay');
+            if (user) {
+                // 1. Determine the username based on the logged-in user's email
+                currentUsername = generateUsernameFromEmail(user.email);
+                const statusRef = doc(db, "users/restaurants", currentUsername, "user_data");
+
+                try {
+                    const statusSnap = await getDoc(statusRef);
+
+                    if (!statusSnap.exists()) {
+                        alert("Error: User profile missing. Please re-authenticate or contact support.");
+                        await signOut(auth);
+                        window.location.href = "login.html";
+                        return;
+                    }
+
+                    const statusData = statusSnap.data();
+                    setupProfileMenu(statusData);
+
+                    if (statusData.detailsSubmitted === false) {
+                        // Show Registration Form
+                        document.getElementById('registration-form').style.display = "block";
+                    } else if (statusData.verified === false) {
+                        // Show Status Screen (Under Review)
+                        const detailsRef = doc(db, "users/restaurants", currentUsername, "restaurant_details");
+                        const detailsSnap = await getDoc(detailsRef);
+                        showStatusPage(statusData, detailsSnap.data());
+                    } else {
+                        // VERIFIED: Show Dashboard
+                        document.getElementById('dashboard-container').style.display = "block";
+                        setupDashboard();
+                    }
+                } catch (error) {
+                    console.error("Firebase fetch error:", error);
+                    alert("A critical error occurred while loading your profile. Please try again.");
+                    await signOut(auth);
+                    window.location.href = "login.html";
+                }
+            } else {
+                // No user logged in, redirect to login page
+                window.location.href = "login.html";
+            }
+            // Hide loader once logic is complete
+            loader.style.display = 'none';
+        });
+
+
+        // --- 1. REGISTRATION FORM ---
+        document.getElementById('partnerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // --- Validation (Simplified for brevity) ---
+            const lat = document.getElementById('loc-x').value;
+            const lng = document.getElementById('loc-y').value;
+            const fullPincode = getPincode();
+            const fullFssai = getFssaiNumber();
+            const busType = document.querySelector('input[name="bt_main"]:checked');
+            let otherInput = null;
+            const ownerPhone = document.getElementById('ownerPhone').value;
+            const managerPhone = document.getElementById('managerPhone').value;
+
+            // Minimal validation checks
+            if (!busType) { alert("Please select a Business Type."); return; }
+            if (busType.value === 'others') {
+                otherInput = document.getElementById('businessTypeOther');
+                if (!otherInput.value) { alert("Please specify 'Others' for Business Type."); return; }
+            }
+            const gstReg = document.querySelector('input[name="gstReg"]:checked').value;
+            if (gstReg === 'yes' && !document.getElementById('gstNumber').value) { alert("Please enter your GST Number."); return; }
+            if (fullFssai.length !== 14) { alert("Please enter the full 14-digit FSSAI Number."); return; }
+            if (fullPincode.length !== 6) { alert("Please enter the full 6-digit Pincode."); return; }
+            if (!lat || !lng) { alert("Please select a location."); return; }
+            if (ownerPhone.length !== 10 || managerPhone.length !== 10) { alert("Phone numbers must be 10 digits."); return; }
+
+            // --- End Validation ---
+
+            // Show Form Loader
+            document.getElementById('form-loader').style.display = 'flex';
+            document.getElementById('submitBtn').disabled = true;
+
+            let busTypeValue = busType.value;
+            if (otherInput && busType.value === 'others') busTypeValue = otherInput.value;
+
+            const gstNumberValue = gstReg === 'yes' ? document.getElementById('gstNumber').value : "N/A";
+
+            const formData = {
+                ownerName: document.getElementById('ownerName').value,
+                businessType: busTypeValue,
+                restaurantName: document.getElementById('restaurantName').value,
+                fssaiType: document.getElementById('fssaiType').value,
+                fssaiNumber: fullFssai,
+                gstRegistered: gstReg,
+                gstNumber: gstNumberValue,
+                address: document.getElementById('address').value,
+                city: document.getElementById('city').value,
+                state: document.getElementById('state').value,
+                pincode: fullPincode,
+                location: { lat: parseFloat(lat), lng: parseFloat(lng) },
+                ownerPhone: ownerPhone,
+                managerPhone: managerPhone,
+                updatedAt: serverTimestamp()
+            };
+
+            try {
+                // 1. Set/Update restaurant details
+                await setDoc(doc(db, "users/restaurants", currentUsername, "restaurant_details"), formData);
+
+                // 2. Update user_data flag
+                await updateDoc(doc(db, "users/restaurants", currentUsername, "user_data"), {
+                    detailsSubmitted: true
+                });
+
+                // 3. ADD USERNAME TO PENDING LIST (Global update)
+                const globalRestaurantsRef = doc(db, "users", "restaurants");
+                await updateDoc(globalRestaurantsRef, {
+                    pending_users: arrayUnion(currentUsername) // Add the new username to the array
+                }).catch(async (error) => {
+                    // If the document 'users/restaurants' doesn't exist, create it.
+                    if (error.code === 'not-found') {
+                        await setDoc(globalRestaurantsRef, {
+                            pending_users: [currentUsername],
+                            verified_users: []
+                        });
+                    } else {
+                        throw error; // re-throw other errors
+                    }
+                });
+
+                alert("Application Submitted Successfully! Please wait for verification.");
+                window.location.reload();
+            } catch (error) {
+                // Hide Form Loader on error
+                document.getElementById('form-loader').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+                alert("Error submitting form: " + error.message);
+            }
+        });
+
+        // --- 2. "UNDER PROCESS" STATUS PAGE ---
+        function showStatusPage(statusData, detailsData) {
+            document.getElementById('registration-form').style.display = "none";
+            document.getElementById('status-screen').style.display = "block";
+
+            const d = detailsData;
+            const gstDisplay = d.gstRegistered === 'yes' ? `Yes (${d.gstNumber})` : 'No';
+
+            document.getElementById('data-summary').innerHTML = `
+                <div class="review-grid">
+                    <div class="sub-header">Basic Info</div>
+                    <div class="review-item"><label>Owner Name</label> <span>${d.ownerName}</span></div>
+                    <div class="review-item"><label>Restaurant Name</label> <span>${d.restaurantName}</span></div>
+                    <div class="review-item"><label>Business Type</label> <span>${d.businessType}</span></div>
+                    <div class="sub-header">Legal & Contact</div>
+                    <div class="review-item"><label>FSSAI</label> <span>${d.fssaiType} - ${d.fssaiNumber}</span></div>
+                    <div class="review-item"><label>GST</label> <span>${gstDisplay}</span></div>
+                    <div class="review-item"><label>Owner Phone</label> <span>${d.ownerPhone}</span></div>
+                    <div class="review-item"><label>Manager Phone</label> <span>${d.managerPhone}</span></div>
+                    <div class="sub-header">Location</div>
+                    <div class="review-item full-width"><label>Address</label> <span>${d.address}</span></div>
+                    <div class="review-item"><label>City / State</label> <span>${d.city}, ${d.state}</span></div>
+                    <div class="review-item"><label>Pincode</label> <span>${d.pincode}</span></div>
+                    <div class="review-item"><label>Coordinates</label> <span>Lat: ${d.location.lat}, Lng: ${d.location.lng}</span></div>
+                </div>`;
+
+            // Set up WhatsApp link
+            const supportPhone = "+919177180258"; // Example Support Number
+            const message = `Hello, I have a query about my application.\nRestaurant: ${d.restaurantName}\nUser: ${statusData.username}`;
+            const waLink = `https://wa.me/${supportPhone}?text=${encodeURIComponent(message)}`;
+            const waButton = document.getElementById('whatsapp-link');
+            waButton.href = waLink;
+            waButton.style.display = 'flex';
+        }
+
+        // --- 3. DASHBOARD (MOCK DATA) ---
+        const orders = {
+            // Note: Data is intentionally mocked as empty per user request.
+            inProgress: [],
+            prepCompleted: [],
+            outForDelivery: [],
+            delivered: [],
+            returnOrders: [],
+            returnAccepted: []
+        };
+
+        function setupDashboard() {
+            document.getElementById('welcome-title').innerText = "Dashboard";
+
+            // Update counts from mock data (All set to 0)
+            document.getElementById('count-inProgress').innerText = orders.inProgress.length; // 0
+            document.getElementById('count-prepCompleted').innerText = orders.prepCompleted.length; // 0
+            document.getElementById('count-outForDelivery').innerText = orders.outForDelivery.length; // 0
+            document.getElementById('count-delivered').innerText = orders.delivered.length; // 0
+            document.getElementById('count-returnOrders').innerText = orders.returnOrders.length; // 0
+            document.getElementById('count-returnAccepted').innerText = orders.returnAccepted.length; // 0
+
+            // Show the default table view
+            showTable('inProgress');
+
+            // Hide WhatsApp for dashboard
+            document.getElementById('whatsapp-link').style.display = 'none';
+        }
+
+        // Helper function to switch to dashboard view (for menu button)
+        window.showDashboardView = function () {
+            // Hide all main containers
+            document.querySelectorAll('.main-container').forEach(el => el.style.display = 'none');
+            // Show dashboard
+            document.getElementById('dashboard-container').style.display = 'block';
+            setupDashboard();
+            // Close dropdown
+            document.getElementById('dropdownMenu').classList.remove("show");
+        }
+
+
+        window.showTable = function (status) {
+            const data = orders[status];
+            const tableContainer = document.getElementById('tableContainer');
+            const statusTitle = document.getElementById(`card-${status}`).querySelector('.title').innerText;
+
+            // Update active card indicator
+            document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+            document.getElementById(`card-${status}`).classList.add('active');
+
+            let html = `
+                <h4 style="margin-bottom:15px; border-left:4px solid var(--gold); padding-left:10px;">${statusTitle} Orders</h4>
+                <table>
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Order Items</th>
+                        <th>Order Value</th>
+                        <th>Delivery Partner ID</th>
+                        <th>Status / Action</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            if (data.length === 0) {
+                html += `<tr><td colspan="5" class="empty">No orders currently in "${statusTitle}".</td></tr>`;
+            } else {
+                data.forEach(order => {
+                    let actionButton = '';
+                    let statusTag = `<span class="tag">${order.tag}</span>`;
+
+                    if (status === 'inProgress') {
+                        actionButton = `<button class="btn-table btn-prepare" onclick="processOrder('${order.id}', 'prepCompleted')">Start Preparation</button>`;
+                        statusTag = `<span class="tag" style="background:#8b5cf6; color:white;">New</span>`;
+                    } else if (status === 'prepCompleted') {
+                        actionButton = `<button class="btn-table btn-ready" onclick="processOrder('${order.id}', 'outForDelivery')">Ready for Pickup</button>`;
+                        statusTag = `<span class="tag" style="background:#fde047; color:#333;">Ready</span>`;
+                    } else if (status === 'returnOrders') {
+                        actionButton = `<button class="btn-table btn-return" onclick="processOrder('${order.id}', 'returnAccepted')">Accept Return</button>`;
+                        statusTag = `<span class="tag" style="background:#fee2e2; color:#b91c1c;">Return Requested</span>`;
+                    } else {
+                        // For Out for Delivery, Delivered, Return Accepted
+                        actionButton = `<span class="tag" style="background:#f3f4f6; color:#444;">No Action</span>`;
+                    }
+
+                    html += `
+                        <tr>
+                            <td class="center">${order.id}</td>
+                            <td><div class="items-list">${order.items}</div></td>
+                            <td class="center">₹${order.value.toFixed(2)}</td>
+                            <td class="center">${order.dpId}</td>
+                            <td class="center">${actionButton}<br><br>${statusTag}</td>
+                        </tr>`;
+                });
+            }
+
+            html += `</tbody></table>`;
+            tableContainer.innerHTML = html;
+        }
+
+        // Mock action for demonstration
+        window.processOrder = function (orderId, nextStatus) {
+            alert(`Order ${orderId} moved to ${nextStatus}. (This is a mock action)`);
+            // In a real app, this would update Firestore and reload the dashboard.
+            window.location.reload();
+        }
+
+        // --- SHARED FUNCTIONS (MAP, UI, LOGOUT) ---
+        function setupProfileMenu(statusData) {
+            document.getElementById('profile-username').innerText = statusData.username;
+            if (statusData.verified === true) {
+                document.getElementById('full-menu-options').classList.remove('hidden');
+            }
+            document.getElementById('profileIcon').addEventListener("click", () => {
+                document.getElementById('dropdownMenu').classList.toggle("show");
+            });
+            document.addEventListener("click", (e) => {
+                const profileIcon = document.getElementById('profileIcon');
+                const dropdownMenu = document.getElementById('dropdownMenu');
+                if (!profileIcon.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                    dropdownMenu.classList.remove("show");
+                }
+            });
+        }
+
+        let map, marker, tempLat = 0, tempLng = 0;
+        window.getGPS = () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    document.getElementById('loc-x').value = pos.coords.latitude.toFixed(6);
+                    document.getElementById('loc-y').value = pos.coords.longitude.toFixed(6);
+                }, (err) => alert("GPS Error: " + err.message));
+            } else {
+                alert("Geolocation not supported by this browser.");
+            }
+        };
+        window.openMap = () => {
+            document.getElementById('map-modal').style.display = 'flex';
+            const initialLat = parseFloat(document.getElementById('loc-x').value) || 16.5062; // Default to Vijayawada
+            const initialLng = parseFloat(document.getElementById('loc-y').value) || 80.6480;
+
+            if (!map) {
+                map = L.map('map').setView([initialLat, initialLng], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+                marker = L.marker([initialLat, initialLng]).addTo(map);
+                tempLat = initialLat;
+                tempLng = initialLng;
+
+                map.on('click', (e) => {
+                    if (marker) map.removeLayer(marker);
+                    marker = L.marker(e.latlng).addTo(map);
+                    tempLat = e.latlng.lat;
+                    tempLng = e.latlng.lng;
+                });
+            } else {
+                map.setView([initialLat, initialLng], 13);
+                if (marker) map.removeLayer(marker);
+                marker = L.marker([initialLat, initialLng]).addTo(map);
+                tempLat = initialLat;
+                tempLng = initialLng;
+            }
+            setTimeout(() => { map.invalidateSize(); }, 200);
+        };
+        window.closeMap = () => document.getElementById('map-modal').style.display = 'none';
+        window.confirmMapLocation = () => {
+            if (tempLat !== 0) {
+                document.getElementById('loc-x').value = tempLat.toFixed(6);
+                document.getElementById('loc-y').value = tempLng.toFixed(6);
+                closeMap();
+            } else {
+                alert("Please click on the map to place a pin.");
+            }
+        };
+
+        document.querySelectorAll('input[name="bt_main"]').forEach(r => r.addEventListener('change', e => document.getElementById('businessTypeOther').classList.toggle('hidden', e.target.value !== 'others')));
+        document.querySelectorAll('input[name="gstReg"]').forEach(r => r.addEventListener('change', e => document.getElementById('gstNumber').classList.toggle('hidden', e.target.value !== 'yes')));
+        document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth).then(() => window.location.href = "login.html"));
+    </script>
+</body>
+
+</html>

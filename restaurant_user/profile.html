@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Profile - Happy Riders Restaurant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <style>
+        :root {
+            --cream: #fff7da;
+            --gold: #facc15;
+            --gold-2: #fcd34d;
+            --orange: #f97316;
+            --muted: #666;
+            --card: #ffffff;
+            --shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+            --radius: 14px;
+            --pad: 18px;
+            font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--cream);
+            color: #222;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 28px;
+            padding-top: 100px;
+            /* Space for fixed header */
+        }
+
+        /* --- NAVIGATION BAR (Copied from index.html) --- */
+        .header-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            z-index: 1000;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: #333;
+            margin: 0;
+            /* Override default margin */
+        }
+
+        .profile-container {
+            position: relative;
+            z-index: 200;
+        }
+
+        .profile-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .dropdown {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            width: 230px;
+            display: none;
+            flex-direction: column;
+            padding: 14px;
+        }
+
+        .dropdown.show {
+            display: flex;
+        }
+
+        .user {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 6px;
+            text-align: center;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 10px;
+            text-align: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .menu-btn {
+            width: 100%;
+            background-color: #fff9d6;
+            border: none;
+            padding: 10px;
+            margin-top: 6px;
+            /* Reduced gap */
+            font-size: 0.95rem;
+            border-radius: 8px;
+            text-align: left;
+            cursor: pointer;
+            font-weight: 600;
+            color: #333;
+            transition: 0.3s;
+        }
+
+        .menu-btn:hover {
+            background: #ffeaa7;
+            transform: translateX(3px);
+        }
+
+        .logout {
+            margin-top: 12px;
+            background: #ef4444;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: 0.3s;
+        }
+
+        .logout:hover {
+            background-color: #dc2626;
+        }
+
+        /* --- END NAVIGATION BAR --- */
+
+        /* Card / content */
+        .container {
+            width: 100%;
+            max-width: 980px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 22px;
+            box-shadow: var(--shadow);
+            border: 2px solid var(--gold-2);
+        }
+
+        .card h2 {
+            margin: 0 0 10px 0;
+            color: var(--orange);
+            font-size: 20px;
+            text-align: left;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px 20px;
+            margin-top: 16px;
+        }
+
+        .row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .label {
+            font-weight: 700;
+            color: #444;
+            font-size: 14px;
+        }
+
+        .value {
+            background: #fbfbfb;
+            border-radius: 10px;
+            padding: 10px 12px;
+            border: 1px solid #eee;
+            color: #222;
+            font-size: 15px;
+            word-break: break-all;
+        }
+
+        .status-verified-text {
+            color: #155724;
+            font-weight: 700;
+        }
+
+        /* single-column blocks (full width) */
+        .full {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        /* Removed master type styling */
+        .type-master {
+            padding: 10px 12px;
+            background: #fffaf0;
+            border-radius: 10px;
+            border: 1px solid #ffe9b3;
+            color: #333;
+            font-weight: 700;
+            width: fit-content;
+        }
+
+        /* footer actions row (optional) */
+        .actions {
+            margin-top: 18px;
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+            /* Adjusted alignment */
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .btn-secondary {
+            background: #fff9d6;
+            color: #333;
+            border: 1px solid #ffe9b3;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* LOADER styles */
+        #loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 247, 218, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 5px solid #fde68a;
+            border-top-color: var(--orange);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* WhatsApp Float (for support) */
+        .whatsapp-float {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: #25d366;
+            color: white;
+            width: 50px;
+            /* Slightly smaller for profile */
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+
+        .whatsapp-float:hover {
+            transform: scale(1.1);
+            background-color: #128C7E;
+        }
+
+        /* responsive */
+        @media (max-width:900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-bar {
+                padding: 15px 12px;
+            }
+
+            .profile-container {
+                right: 12px;
+                top: auto;
+            }
+        }
+
+        @media (max-width:480px) {
+            body {
+                padding: 16px;
+                padding-top: 80px;
+            }
+
+            .profile-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+
+            .dropdown {
+                width: 190px;
+                right: 0;
+            }
+
+            header h1 {
+                font-size: 18px;
+            }
+
+            .card {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loader-overlay">
+        <div class="spinner"></div>
+        <p style="margin-top: 15px; color: var(--muted);">Loading Profile...</p>
+    </div>
+
+    <div class="header-bar">
+        <h1 id="welcome-title">Happy Riders</h1>
+        <div class="profile-container" id="profileWrap">
+            <div class="profile-icon" id="profileIcon" aria-expanded="false">👤</div>
+            <div class="dropdown" id="profileDropdown" role="menu">
+                <div class="user" id="menu-username">N/A</div>
+                <div class="muted">Profile Menu</div>
+
+                <button class="menu-btn" onclick="gotoPage('index.html')">Dashboard</button>
+                <button class="menu-btn" onclick="gotoPage('profile.html')">Profile</button>
+                <button class="menu-btn" onclick="gotoPage('wallet.html')">Wallet</button>
+                <button class="menu-btn" onclick="gotoPage('history.html')">History</button>
+                <button class="menu-btn" onclick="gotoPage('manage_branches.html')">Manage Branches</button>
+                <button class="menu-btn" onclick="gotoPage('manage_branch_admins.html')">Manage Branch Admins</button>
+                <button class="menu-btn" onclick="gotoPage('menu.html')">Menu</button>
+                <button class="menu-btn" onclick="gotoPage('policies.html')">Policies</button>
+                <button class="menu-btn" onclick="gotoPage('manage_discounts.html')">Manage Discounts</button>
+                <button class="menu-btn" onclick="gotoPage('support.html')">Customer Support</button>
+
+                <button class="logout" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </div>
+    <main class="container hidden" id="profile-content">
+        <div class="card" role="region" aria-labelledby="aboutTitle">
+            <h2 id="aboutTitle">Account Details</h2>
+
+            <div class="grid">
+                <div class="row">
+                    <div class="label">Owner Name</div>
+                    <div class="value" data-field="ownerName">N/A</div>
+                </div>
+
+                <div class="row">
+                    <div class="label">FSSAI Type</div>
+                    <div class="type-master" data-field="fssaiType">N/A</div>
+                </div>
+
+                <div class="row">
+                    <div class="label">Account Status</div>
+                    <div class="value" data-field="accountStatus">N/A</div>
+                </div>
+
+                <div class="row">
+                    <div class="label">Business Type</div>
+                    <div class="value" data-field="businessType">N/A</div>
+                </div>
+
+                <div class="row full">
+                    <div class="label">Restaurant / Brand / Cloud Kitchen Name</div>
+                    <div class="value" data-field="restaurantName">N/A</div>
+                </div>
+
+                <div class="row">
+                    <div class="label">FSSAI Number</div>
+                    <div class="value" data-field="fssaiNumber">N/A</div>
+                </div>
+
+                <div class="row">
+                    <div class="label">GST Registered / Number</div>
+                    <div class="value" data-field="gstDetails">N/A</div>
+                </div>
+
+                <div class="row">
+                    <div class="label">Contact Email ID</div>
+                    <div class="value" data-field="email">N/A</div>
+                </div>
+
+                <div class="row">
+                    <div class="label">Owner Phone Number</div>
+                    <div class="value" data-field="ownerPhone">N/A</div>
+                </div>
+
+                <div class="row">
+                    <div class="label">Manager Phone Number</div>
+                    <div class="value" data-field="managerPhone">N/A</div>
+                </div>
+
+                <div class="row full">
+                    <div class="label">Branch Address (City, State, Pincode)</div>
+                    <div class="value" data-field="fullAddress">N/A</div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <p style="font-size:0.9rem; color:#f97316; font-weight:600;">
+                    To edit the data, please contact us using the WhatsApp icon below or visit Customer Support.
+                </p>
+                <button class="btn btn-secondary" onclick="gotoPage('index.html')">Back to Dashboard</button>
+            </div>
+        </div>
+    </main>
+
+    <a href="#" class="whatsapp-float hidden" id="whatsapp-link" target="_blank">
+        <i class="fa-brands fa-whatsapp"></i>
+    </a>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // --- FIREBASE CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1fdsIDsOmds8sT9thk_eTPBCW5UC02BM",
+            authDomain: "happy-rider-restaurant.firebaseapp.com",
+            projectId: "happy-rider-restaurant",
+            storageBucket: "happy-rider-restaurant.firebasestorage.app",
+            messagingSenderId: "976202866016",
+            appId: "1:976202866016:web:80b4737c422bfe70e09205",
+            measurementId: "G-ST3M0BVBKQ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        let currentUsername = null;
+
+        const SUPPORT_PHONE = "+919177180258";
+
+        // Helper to generate the Firestore "username" from the email prefix
+        function generateUsernameFromEmail(email) {
+            return email.split('@')[0].toLowerCase();
+        }
+
+        // --- DATA INJECTION ---
+        async function loadProfileData(user) {
+            currentUsername = generateUsernameFromEmail(user.email);
+
+            const userDataRef = doc(db, "users/restaurants", currentUsername, "user_data");
+            const detailsRef = doc(db, "users/restaurants", currentUsername, "restaurant_details");
+
+            try {
+                const [userDataSnap, detailsSnap] = await Promise.all([getDoc(userDataRef), getDoc(detailsRef)]);
+
+                if (!userDataSnap.exists()) {
+                    throw new Error("User data not found in database.");
+                }
+
+                const userData = userDataSnap.data();
+                const detailsData = detailsSnap.data() || {};
+
+                // --- Set Menu/Header Data ---
+                document.getElementById('menu-username').textContent = currentUsername;
+
+                // --- Set WhatsApp Link ---
+                const waMessage = `Hello, I need to edit my restaurant profile data.\nUser: ${currentUsername}`;
+                const waLink = `https://wa.me/${SUPPORT_PHONE}?text=${encodeURIComponent(waMessage)}`;
+                const waButton = document.getElementById('whatsapp-link');
+                waButton.href = waLink;
+                waButton.classList.remove('hidden');
+
+                // --- Set Main Profile Data ---
+
+                // Data from user_data (Auth/Contact)
+                document.querySelector('[data-field="email"]').textContent = userData.contactEmail || user.email;
+
+                let statusText;
+                if (userData.verified) {
+                    statusText = `<i class="fa-solid fa-circle-check" style="color:#155724; margin-right:5px;"></i> Verified`;
+                } else if (userData.detailsSubmitted) {
+                    statusText = `Pending Review`;
+                } else {
+                    statusText = `Incomplete Setup`;
+                }
+                document.querySelector('[data-field="accountStatus"]').innerHTML = statusText;
+
+                // Data from restaurant_details (Application)
+                document.querySelector('[data-field="ownerName"]').textContent = detailsData.ownerName || 'N/A';
+                document.querySelector('[data-field="restaurantName"]').textContent = detailsData.restaurantName || 'N/A';
+                document.querySelector('[data-field="ownerPhone"]').textContent = detailsData.ownerPhone || 'N/A';
+                document.querySelector('[data-field="managerPhone"]').textContent = detailsData.managerPhone || 'N/A';
+                document.querySelector('[data-field="businessType"]').textContent = detailsData.businessType || 'N/A';
+
+                // FSSAI Type (removed Master —)
+                document.querySelector('[data-field="fssaiType"]').textContent = detailsData.fssaiType ? detailsData.fssaiType.charAt(0).toUpperCase() + detailsData.fssaiType.slice(1) : 'N/A';
+                document.querySelector('[data-field="fssaiNumber"]').textContent = detailsData.fssaiNumber || 'N/A';
+
+                let gstDisplay = 'No';
+                if (detailsData.gstRegistered === 'yes') {
+                    gstDisplay = `Yes / ${detailsData.gstNumber || 'N/A'}`;
+                }
+                document.querySelector('[data-field="gstDetails"]').textContent = gstDisplay;
+
+                const fullAddress = `${detailsData.address || 'N/A'}, ${detailsData.city || 'N/A'}, ${detailsData.state || 'N/A'}, ${detailsData.pincode || 'N/A'}`;
+                document.querySelector('[data-field="fullAddress"]').textContent = fullAddress;
+
+                document.getElementById('profile-content').classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Error loading profile:", error);
+                alert("Failed to load profile data. Redirecting to Dashboard.");
+                window.location.href = "index.html";
+            } finally {
+                document.getElementById('loader-overlay').style.display = 'none';
+            }
+        }
+
+        // --- AUTH CHECK & ROUTING ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loadProfileData(user);
+            } else {
+                window.location.href = "login.html";
+            }
+        });
+
+        // --- UI & NAVIGATION HELPERS ---
+
+        // Dropdown toggle logic
+        const profileIconEl = document.getElementById('profileIcon');
+        const dropdownEl = document.getElementById('profileDropdown');
+
+        profileIconEl.addEventListener('click', (e) => {
+            dropdownEl.classList.toggle('show');
+            profileIconEl.setAttribute('aria-expanded', dropdownEl.classList.contains('show').toString());
+            e.stopPropagation();
+        });
+
+        // Close when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('profileWrap')?.contains(e.target)) {
+                dropdownEl.classList.remove('show');
+                profileIconEl.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // Navigation helpers
+        window.gotoPage = function (name) {
+            // Check if the current page is profile.html and we're trying to navigate to index.html
+            if (name === 'index.html') {
+                window.location.href = name;
+            } else if (name === 'profile.html') {
+                // Already on the profile page, just close the menu
+                dropdownEl.classList.remove('show');
+            }
+            else {
+                // General navigation
+                alert('Navigate to: ' + name + ' (replace with real navigation)');
+            }
+        }
+
+        window.logout = function () {
+            signOut(auth).then(() => {
+                window.location.href = 'login.html'; // Redirect to your sign-in page
+            }).catch((error) => {
+                alert("Logout Error: " + error.message);
+            });
+        }
+    </script>
+</body>
+
+</html>

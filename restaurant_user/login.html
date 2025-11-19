@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Happy Riders - Get Started</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            width: 100%;
+            background-color: #fff7da;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            justify-content: center;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .center-box {
+            width: 100%;
+            max-width: 420px;
+            background: #ffffff;
+            padding: 35px 30px;
+            border-radius: 20px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            margin-top: 20px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 25px;
+        }
+
+        .social-prompt {
+            font-size: 1rem;
+            color: #555;
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .btn-social {
+            background-color: #fff;
+            color: #444;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+        }
+
+        .btn-social:hover:not(:disabled) {
+            background-color: #f5f5f5;
+        }
+
+        .btn-social i {
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
+
+        .btn-google i {
+            color: #DB4437;
+        }
+
+        .btn-apple i {
+            color: #000;
+        }
+
+        .btn-microsoft i {
+            color: #00A4EF;
+        }
+
+        .error-msg {
+            color: #dc3545;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-top: 15px;
+            display: none;
+            background: #ffe6e6;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ffcccc;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Happy Riders Restaurant</h1>
+    <p class="social-prompt" style="font-size:1.1rem; color:#eab308; font-weight:600;">Manage your orders and menu.</p>
+
+    <div class="center-box" id="social-box">
+        <h2>Get Started</h2>
+        <p class="social-prompt">Choose an option below to log in to your account or create a new one.</p>
+
+        <div id="auth-error" class="error-msg"></div>
+
+        <button type="button" class="btn btn-social btn-google" id="google-auth-btn">
+            <i class="fa-brands fa-google"></i> Continue with Google
+        </button>
+        <button type="button" class="btn btn-social btn-apple" id="apple-auth-btn" disabled>
+            <i class="fa-brands fa-apple"></i> Continue with Apple
+        </button>
+        <button type="button" class="btn btn-social btn-microsoft" id="microsoft-auth-btn" disabled>
+            <i class="fa-brands fa-microsoft"></i> Continue with Microsoft
+        </button>
+
+        <p style="font-size:0.85rem; color:#999; margin-top:20px;">By continuing, you agree to our Terms of Service.</p>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import {
+            getAuth,
+            GoogleAuthProvider,
+            OAuthProvider, // Used for Apple and Microsoft
+            signInWithPopup,
+            fetchSignInMethodsForEmail
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // *** NOTE: REPLACE WITH YOUR ACTUAL FIREBASE CONFIG ***
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1fdsIDsOmds8sT9thk_eTPBCW5UC02BM",
+            authDomain: "happy-rider-restaurant.firebaseapp.com",
+            projectId: "happy-rider-restaurant",
+            storageBucket: "happy-rider-restaurant.firebasestorage.app",
+            messagingSenderId: "976202866016",
+            appId: "1:976202866016:web:80b4737c422bfe70e09205",
+            measurementId: "G-ST3M0BVBKQ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        auth.languageCode = 'en';
+
+        // Helper to generate the Firestore "username" from the email prefix
+        function generateUsernameFromEmail(email) {
+            // "swaroop" from "swaroop@gmail.com"
+            const localPart = email.split('@')[0];
+            return localPart.toLowerCase();
+        }
+
+        // --- CORE FUNCTIONALITY: CREATE/LOGIN WITH FIREBASE AUTH ---
+        async function handleSocialSignIn(providerInstance, buttonId) {
+            const btn = document.getElementById(buttonId);
+            const errorDiv = document.getElementById('auth-error');
+            errorDiv.style.display = 'none';
+
+            const originalBtnText = btn.innerHTML;
+            btn.innerText = "Processing...";
+            btn.disabled = true;
+
+            try {
+                // This single call handles both sign-in (if user exists) and new account creation (if they don't)
+                const result = await signInWithPopup(auth, providerInstance);
+                const user = result.user;
+                const email = user.email;
+
+                if (!email) {
+                    throw new Error("Email not provided by social provider.");
+                }
+
+                // 1. Generate the unique Firestore key (Username)
+                const username = generateUsernameFromEmail(email);
+
+                // 2. Check if Firestore profile exists
+                const userDocRef = doc(db, "users", "restaurants", username, "user_data");
+                const docSnap = await getDoc(userDocRef);
+                const authMethod = providerInstance.providerId.split('.')[0];
+
+                if (!docSnap.exists()) {
+                    // *** NEW USER: Create profile documents (This is the "add him to db" step) ***
+                    await setDoc(userDocRef, {
+                        uid: user.uid,
+                        username: username,
+                        contactEmail: email,
+                        displayName: user.displayName || 'Restaurant User',
+                        authMethod: authMethod,
+                        verified: false,
+                        detailsSubmitted: false,
+                        createdAt: serverTimestamp()
+                    });
+
+                    // Create related docs for a new user
+                    await setDoc(doc(db, "users", "restaurants", username, "restaurant_details"), {
+                        username: username
+                    });
+                    await setDoc(doc(db, "users", "restaurants", username, "products"), {
+                        username: username
+                    });
+
+                    console.log(`New Account created and logged in with ${authMethod}.`);
+                } else {
+                    // *** EXISTING USER: Logged in (This is the "continue" step) ***
+                    console.log(`Existing user logged in with ${authMethod}.`);
+                }
+
+                // Redirect on success
+                window.location.href = "index.html";
+
+            } catch (error) {
+                btn.innerHTML = originalBtnText;
+                btn.disabled = false;
+
+                let message = "Sign-in failed. Please try again.";
+
+                if (error.code === 'auth/account-exists-with-different-credential') {
+                    // User signed up with another method (e.g., Apple then tries Google with same email)
+                    const methods = await fetchSignInMethodsForEmail(auth, error.customData.email);
+                    const providerName = methods[0].split('.')[0];
+                    message = `This email is already linked to an account using ${providerName}. Please use the ${providerName} button.`;
+                } else if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+                    message = "Sign-in window was closed.";
+                } else if (error.message.includes('email not provided')) {
+                    message = "Your social provider did not share an email address. Cannot proceed.";
+                } else {
+                    message = `Authentication Error: ${error.message}`;
+                }
+
+                errorDiv.innerText = message;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+
+        // --- PROVIDER INSTANCES ---
+        const googleProvider = new GoogleAuthProvider();
+        const appleProvider = new OAuthProvider('apple.com');
+        // Microsoft Provider requires specific setup (Redirect flow is often better for Microsoft)
+        // const microsoftProvider = new OAuthProvider('microsoft.com');
+
+
+        // --- SOCIAL BUTTON LISTENERS ---
+        document.getElementById('google-auth-btn').addEventListener('click', () => handleSocialSignIn(googleProvider, 'google-auth-btn'));
+        document.getElementById('apple-auth-btn').addEventListener('click', () => handleSocialSignIn(appleProvider, 'apple-auth-btn'));
+
+        // Placeholder for Microsoft
+        // document.getElementById('microsoft-auth-btn').addEventListener('click', () => handleSocialSignIn(microsoftProvider, 'microsoft-auth-btn'));
+
+    </script>
+</body>
+
+</html>

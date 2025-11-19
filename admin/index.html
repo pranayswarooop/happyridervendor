@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Happy Riders Master Account</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+
+        body {
+            background-color: #fff6dc;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header Section */
+        header {
+            width: 100%;
+            background-color: #facc15;
+            color: white;
+            padding: 18px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-align: center;
+            flex-grow: 1;
+            color: #333;
+        }
+
+        /* Profile Icon */
+        .profile-container {
+            position: relative;
+        }
+
+        .profile-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: #f97316;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .profile-icon:hover {
+            background-color: #ea580c;
+        }
+
+        /* Dropdown Menu */
+        .dropdown {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+            flex-direction: column;
+            width: 250px;
+            z-index: 10;
+            animation: fadeIn 0.25s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .dropdown.show {
+            display: flex;
+        }
+
+        .dropdown button {
+            background: none;
+            border: none;
+            text-align: left;
+            padding: 12px 18px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.25s;
+            color: #333;
+        }
+
+        .dropdown button:hover {
+            background-color: #fff6dc;
+        }
+
+        .logout-btn {
+            color: #ef4444 !important;
+            font-weight: 600;
+        }
+
+        /* Content Area */
+        main {
+            flex-grow: 1;
+            padding: 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Dashboard Cards */
+        #dashboard-content {
+            width: 100%;
+            max-width: 900px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #facc15;
+            padding-bottom: 5px;
+        }
+
+        .filter-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .filter-controls label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .filter-controls select,
+        .filter-controls button {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            cursor: pointer;
+        }
+
+        .pending-item {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            background: #fffbe6;
+        }
+
+        .pending-item strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #f97316;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Happy Riders Master Account</h1>
+
+        <div class="profile-container">
+            <div class="profile-icon" id="profileIcon">👤</div>
+            <div class="dropdown" id="dropdownMenu">
+                <button onclick="comingSoon()">Manage Admin Managers</button>
+                <button onclick="openRestaurantManagement()">Manage Restaurants</button>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h2>Welcome to the Master Dashboard</h2>
+        <div id="dashboard-content">
+            <p style="margin-top: 20px; color: #666;">Select an option from the profile menu (👤) to manage system
+                entities.</p>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Firebase Configuration (Ensure this is correct for your project)
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1fdsIDsOmds8sT9thk_eTPBCW5UC02BM",
+            authDomain: "happy-rider-restaurant.firebaseapp.com",
+            projectId: "happy-rider-restaurant",
+            storageBucket: "happy-rider-restaurant.firebasestorage.app",
+            messagingSenderId: "976202866016",
+            appId: "1:976202866016:web:80b4737c422bfe70e09205",
+            measurementId: "G-ST3M0BVBKQ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const dashboardContent = document.getElementById('dashboard-content');
+        const profileIcon = document.getElementById("profileIcon");
+        const dropdownMenu = document.getElementById("dropdownMenu");
+
+        // Global variable to hold the fetched data for sorting/downloading/filtering
+        let currentPendingUsersData = [];
+
+        // --- AUTHENTICATION CHECK & REDIRECT ---
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = "login.html"; // Redirects unauthenticated users
+            } else {
+                console.log("User is logged in:", user.email);
+            }
+        });
+
+        // --- UI TOGGLE LOGIC ---
+        profileIcon.addEventListener("click", () => {
+            dropdownMenu.classList.toggle("show");
+        });
+
+        document.addEventListener("click", (e) => {
+            if (!profileIcon.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                dropdownMenu.classList.remove("show");
+            }
+        });
+
+        // --- LOGOUT FUNCTION ---
+        window.logout = async () => {
+            try {
+                await signOut(auth);
+                alert("Logged out successfully!");
+                window.location.href = "home_page.html";
+            } catch (error) {
+                console.error("Logout Error:", error);
+                alert("Logout failed. Please try again.");
+            }
+        };
+
+        // --- MENU ACTION: COMING SOON ---
+        window.comingSoon = () => {
+            alert("Manage Admin Managers: Coming Soon! 🚧");
+            dropdownMenu.classList.remove("show");
+        };
+
+        // --- HELPER FUNCTION: RENDER LIST ---
+        function renderPendingList(data) {
+            const pendingList = document.getElementById('pending-list');
+            if (!pendingList) return;
+
+            if (data.length === 0) {
+                pendingList.innerHTML = `<p>No pending restaurant applications found matching the current filter.</p>`;
+                return;
+            }
+
+            let html = '';
+            data.forEach(item => {
+                const userData = item.data;
+                html += `
+                    <div class="pending-item">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>Username: ${item.username}</strong>
+                                <p>Restaurant Name: ${userData.restaurantName || 'N/A'}</p>
+                                <p>City: ${userData.city || 'N/A'}</p>
+                            </div>
+                            <div class="actions">
+                                <button onclick="approveUser('${item.username}')" 
+                                    style="background-color: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-right: 10px;">
+                                    Approve
+                                </button>
+                                <button onclick="resetUser('${item.username}')" 
+                                    style="background-color: #f59e0b; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer;">
+                                    Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            pendingList.innerHTML = html;
+        }
+
+        // --- FIREBASE ACTION: APPROVE USER ---
+        window.approveUser = async (username) => {
+            if (!confirm(`Are you sure you want to APPROVE user ${username}? This will verify their account and move them to the verified list.`)) return;
+
+            try {
+                // Path to the user's data document: /users/restaurants/{username}/user_data
+                const userDataDocRef = doc(db, "users", "restaurants", username, "user_data");
+                // Path to the master list document
+                const masterListDocRef = doc(db, "users", "restaurants");
+
+                // 1. Update the user's data document (set verified: true, detailsSubmitted: true)
+                await updateDoc(userDataDocRef, {
+                    verified: true,
+                    detailsSubmitted: true
+                });
+
+                // 2. Update the master list document (move username from pending to verified)
+                await updateDoc(masterListDocRef, {
+                    verified_users: arrayUnion(username),  // Add to verified_users
+                    pending_users: arrayRemove(username)   // Remove from pending_users
+                });
+
+                alert(`User ${username} approved and moved to the verified list successfully!`);
+
+                // Refresh the list
+                openRestaurantManagement();
+
+            } catch (error) {
+                console.error(`Error approving user ${username}:`, error);
+                alert(`Failed to approve user ${username}. Check console.`);
+            }
+        };
+
+        // --- FIREBASE ACTION: RESET USER ---
+        window.resetUser = async (username) => {
+            if (!confirm(`Are you sure you want to RESET user ${username}? This will require them to resubmit details.`)) return;
+
+            try {
+                // Path to the user's data document: /users/restaurants/{username}/user_data
+                const userDataDocRef = doc(db, "users", "restaurants", username, "user_data");
+
+                // Reset both fields
+                await updateDoc(userDataDocRef, {
+                    detailsSubmitted: false,
+                    verified: false
+                });
+
+                alert(`User ${username} details reset successfully!`);
+                // Refresh the list
+                openRestaurantManagement();
+
+            } catch (error) {
+                console.error(`Error resetting user ${username}:`, error);
+                alert(`Failed to reset user ${username}. Check console.`);
+            }
+        };
+
+        // --- SORTING FUNCTION ---
+        window.sortByCity = () => {
+            const sortedData = [...currentPendingUsersData].sort((a, b) => {
+                const cityA = a.data.city ? a.data.city.toLowerCase() : '';
+                const cityB = b.data.city ? b.data.city.toLowerCase() : '';
+                return cityA.localeCompare(cityB);
+            });
+            renderPendingList(sortedData);
+        };
+
+        // --- FILTERING FUNCTION ---
+        window.filterByCity = (selectElement) => {
+            const selectedCity = selectElement.value;
+            let filteredData = [];
+
+            if (selectedCity === 'all') {
+                filteredData = currentPendingUsersData;
+            } else {
+                filteredData = currentPendingUsersData.filter(item => item.data.city === selectedCity);
+            }
+            renderPendingList(filteredData);
+        };
+
+        // --- RENDER FILTER UI ---
+        function renderFilterUI(data) {
+            const uniqueCities = [...new Set(data.map(item => item.data.city).filter(c => c))].sort();
+
+            let selectHtml = `
+                <div class="filter-controls">
+                    <label for="city-filter">Filter by City:</label>
+                    <select id="city-filter" onchange="filterByCity(this)">
+                        <option value="all">All Cities (${data.length})</option>
+            `;
+
+            uniqueCities.forEach(city => {
+                const cityCount = data.filter(item => item.data.city === city).length;
+                selectHtml += `<option value="${city}">${city} (${cityCount})</option>`;
+            });
+
+            selectHtml += `
+                    </select>
+                    <button onclick="sortByCity()" style="background-color: #3b82f6; color: white; border: none;">Sort by City</button>
+                    <button onclick="downloadData()" style="background-color: #059669; color: white; border: none;">Download CSV</button>
+                </div>
+            `;
+
+            return selectHtml;
+        }
+
+
+        // --- DOWNLOAD FUNCTION (ALL FIELDS) ---
+        window.downloadData = () => {
+            if (currentPendingUsersData.length === 0) {
+                alert("No data to download.");
+                return;
+            }
+
+            // Get data currently displayed (respecting any active filters/sorts before downloading)
+            const listElement = document.getElementById('pending-list');
+            const dataToDownload = listElement && listElement.children.length > 0 ?
+                [...document.getElementById('city-filter').options].find(opt => opt.selected)?.value !== 'all' ?
+                    currentPendingUsersData.filter(item => item.data.city === document.getElementById('city-filter').value) :
+                    currentPendingUsersData : currentPendingUsersData;
+
+
+            // Define CSV headers (All fields requested)
+            let csv = "Username,Restaurant Name,City,State,Pincode,Address,Owner Name,Owner Phone,Manager Phone,BusinessType,FSSAI Type,FSSAI Number,GST Registered,GST Number,Latitude,Longitude,UpdatedAt\n";
+
+            dataToDownload.forEach(item => {
+                const data = item.data;
+                const updatedAt = data.updatedAt instanceof Timestamp ? data.updatedAt.toDate().toLocaleString() : data.updatedAt || '';
+
+                const row = [
+                    item.username,
+                    `"${data.restaurantName || ''}"`,
+                    `"${data.city || ''}"`,
+                    `"${data.state || ''}"`,
+                    `"${data.pincode || ''}"`,
+                    `"${data.address || ''}"`,
+                    `"${data.ownerName || ''}"`,
+                    `"${data.ownerPhone || ''}"`,
+                    `"${data.managerPhone || ''}"`,
+                    `"${data.businessType || ''}"`,
+                    `"${data.fssaiType || ''}"`,
+                    `"${data.fssaiNumber || ''}"`,
+                    `"${data.gstRegistered || ''}"`,
+                    `"${data.gstNumber || ''}"`,
+                    `${data.location && data.location.lat ? data.location.lat : ''}`,
+                    `${data.location && data.location.lng ? data.location.lng : ''}`,
+                    `"${updatedAt}"`
+                ];
+                csv += row.join(',') + '\n';
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", "Pending_Restaurants_Data.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+
+        // --- MENU ACTION: MANAGE RESTAURANTS (FETCH DATA) ---
+        window.openRestaurantManagement = async () => {
+            dropdownMenu.classList.remove("show");
+            dashboardContent.innerHTML = `
+                <div class="card">
+                    <h2 id="pending-title">Pending Restaurant Applications</h2>
+                    <div id="filter-controls-container">Loading filters...</div>
+                    <div id="pending-list" style="margin-top: 15px;"></div>
+                </div>
+            `;
+            const pendingList = document.getElementById('pending-list');
+            pendingList.innerHTML = 'Fetching data...';
+
+            try {
+                // 1. Get the document that holds the list of pending users: /users/restaurants
+                const masterRestaurantDocRef = doc(db, "users", "restaurants");
+                const masterSnap = await getDoc(masterRestaurantDocRef);
+
+                if (!masterSnap.exists() || !masterSnap.data().pending_users || masterSnap.data().pending_users.length === 0) {
+                    pendingList.innerHTML = `<p>No pending restaurant applications found.</p>`;
+                    currentPendingUsersData = [];
+                    return;
+                }
+
+                const pendingUsernames = masterSnap.data().pending_users;
+
+                // 2. Fetch details for each pending user
+                const fetchPromises = pendingUsernames.map(async (username) => {
+                    const detailDocRef = doc(db, "users", "restaurants", username, "restaurant_details");
+                    const detailSnap = await getDoc(detailDocRef);
+
+                    if (detailSnap.exists()) {
+                        return { username, data: detailSnap.data() };
+                    }
+                    return null;
+                });
+
+                const results = await Promise.all(fetchPromises);
+                currentPendingUsersData = results.filter(item => item !== null); // Store full data globally
+
+                if (currentPendingUsersData.length === 0) {
+                    pendingList.innerHTML = `<p>Pending list is empty or details documents are missing.</p>`;
+                    return;
+                }
+
+                // 3. Render filter UI and data
+                document.getElementById('filter-controls-container').innerHTML = renderFilterUI(currentPendingUsersData);
+                renderPendingList(currentPendingUsersData);
+
+            } catch (error) {
+                console.error("Error fetching restaurant data:", error);
+                pendingList.innerHTML = `<p style="color: #dc3545;">Error loading data. Please check console for details.</p>`;
+            }
+        };
+    </script>
+</body>
+
+</html>
