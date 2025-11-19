@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Master Employee Login - Happy Rider Restaurant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+
+        body {
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f7f7ff;
+            padding: 20px;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            padding: 40px 35px;
+            border-radius: 20px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
+            text-align: center;
+        }
+
+        .login-container h1 {
+            color: #333;
+            font-size: 1.9rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .login-container p {
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        /* Error Message */
+        .error-msg {
+            color: #dc3545;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 15px;
+            display: none;
+            background: #ffe6e6;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #ffcccc;
+        }
+
+        .form-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.95rem;
+            color: #555;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        /* Password Wrapper for Icon */
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-wrapper input {
+            width: 100%;
+            padding-right: 45px;
+            /* Space for icon */
+        }
+
+        .toggle-password {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            color: #888;
+            cursor: pointer;
+        }
+
+        /* End Password Wrapper */
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            outline: none;
+            font-size: 1rem;
+            transition: 0.3s;
+            background: #fafafa;
+        }
+
+        .form-group input:focus {
+            border-color: #facc15;
+            background: #fffce8;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #facc15;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn.loading {
+            background: #eab308;
+        }
+
+        .forgot-password {
+            display: block;
+            margin-top: 18px;
+            color: #666;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: 0.3s;
+            font-weight: 500;
+        }
+
+        .forgot-password:hover {
+            color: #eab308;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 30px 25px;
+            }
+
+            .login-container h1 {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <h1>Happy Rider</h1>
+        <p>Master Employee Login</p>
+
+        <div id="login-error" class="error-msg"></div>
+
+        <form id="admin-login-form">
+            <div class="form-group">
+                <label>Email ID</label>
+                <input type="email" id="email" placeholder="Enter your email ID" required />
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" placeholder="Enter your password" required />
+                    <i class="fa-solid fa-eye-slash toggle-password" onclick="togglePass('password', this)"></i>
+                </div>
+            </div>
+
+            <button type="submit" class="btn" id="login-btn">Login</button>
+        </form>
+    </div>
+
+    <script>
+        // Password Toggle UI
+        function togglePass(fieldId, icon) {
+            const input = document.getElementById(fieldId);
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+            } else {
+                input.type = "password";
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+            }
+        }
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1fdsIDsOmds8sT9thk_eTPBCW5UC02BM",
+            authDomain: "happy-rider-restaurant.firebaseapp.com",
+            projectId: "happy-rider-restaurant",
+            storageBucket: "happy-rider-restaurant.firebasestorage.app",
+            messagingSenderId: "976202866016",
+            appId: "1:976202866016:web:80b4737c422bfe70e09205",
+            measurementId: "G-ST3M0BVBKQ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const loginForm = document.getElementById('admin-login-form');
+        const loginBtn = document.getElementById('login-btn');
+        const errorDiv = document.getElementById('login-error');
+
+        // Helper to show errors
+        function showError(message) {
+            errorDiv.innerText = message;
+            errorDiv.style.display = 'block';
+            loginBtn.innerText = "Submit (Login Only)";
+            loginBtn.classList.remove('loading');
+        }
+
+        // Helper function to extract a simple username from an email
+        function extractUsername(email) {
+            return email.split('@')[0];
+        }
+
+        // Function to only update the user document in the /admin collection on successful login
+        async function updateUserDocument(user, password) {
+            const username = extractUsername(user.email);
+            const userDocRef = doc(db, "admin", username);
+            const now = Timestamp.now();
+
+            // Only update lastLogin and merge
+            // NOTE: Since this is Login Only, we assume the document already exists from a prior setup step.
+            try {
+                await setDoc(userDocRef, {
+                    lastLogin: now,
+                    uid: user.uid, // Update UID if needed
+                    pass: password // ⚠️ Insecure: Updating password on login as requested
+                }, { merge: true });
+                console.log("Existing user document updated in /admin collection.");
+            } catch (e) {
+                console.error("Failed to update Firestore document on login:", e);
+                // We don't block login if Firestore update fails, but log the error.
+            }
+        }
+
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            loginBtn.innerText = "Processing...";
+            loginBtn.classList.add('loading');
+            errorDiv.style.display = 'none';
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showError("Please enter both email and password.");
+                return;
+            }
+
+            let userCredential = null;
+
+            // 1. Attempt Sign-in using Firebase Authentication
+            try {
+                userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+                // 2. SUCCESS: User successfully logged in via Firebase Auth
+                if (userCredential && userCredential.user) {
+                    await updateUserDocument(userCredential.user, password);
+                    window.location.href = "index.html";
+                }
+
+            } catch (error) {
+                // 3. FAILURE: User not found, wrong password, or any other authentication error
+                // We display a generic "Invalid" message as requested, hiding the reason.
+                showError("Invalid");
+                console.error("Authentication Error:", error);
+            }
+        });
+
+    </script>
+</body>
+
+</html>
